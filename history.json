@@ -1,0 +1,16 @@
+{
+  "sessions": [
+    {
+      "ts": 1758024139592,
+      "id": "sess_CGOfz0MTOpCPoY0ZiwuYf",
+      "model": "gpt-realtime",
+      "voice": "ballad",
+      "modalities": [
+        "audio",
+        "text"
+      ],
+      "online": true
+    }
+  ],
+  "messages": []
+}

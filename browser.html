@@ -11,101 +11,117 @@
       background-color: #1a1a1a;
       color: #ffffff;
     }
-    .container {
-      display: flex;
-      gap: 20px;
-    }
-    .controls {
-      flex: 1;
-      min-width: 300px;
-    }
+    .container { display: flex; gap: 20px; }
+    .controls { flex: 1; min-width: 340px; }
     .output {
-      flex: 2;
-      background-color: #2a2a2a;
-      border-radius: 8px;
-      padding: 20px;
-      height: 600px;
-      overflow-y: auto;
+      flex: 2; background-color: #2a2a2a; border-radius: 8px; padding: 20px;
+      height: 700px; overflow-y: auto;
     }
     button {
-      background-color: #4CAF50;
-      border: none;
-      color: white;
-      padding: 15px 32px;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 16px;
-      margin: 4px 2px;
-      cursor: pointer;
-      border-radius: 4px;
+      background-color: #4CAF50; border: none; color: white; padding: 10px 14px;
+      text-align: center; text-decoration: none; display: inline-block; font-size: 14px;
+      margin: 4px 2px; cursor: pointer; border-radius: 4px;
     }
-    button:disabled {
-      background-color: #666;
-      cursor: not-allowed;
-    }
-    .status {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-    .status.connected {
-      background-color: #4CAF50;
-    }
-    .status.connecting {
-      background-color: #ff9800;
-    }
-    .status.disconnected {
-      background-color: #f44336;
-    }
-    .log-entry {
-      margin: 5px 0;
-      padding: 8px;
-      border-left: 3px solid #4CAF50;
-      background-color: #333;
-      border-radius: 4px;
-    }
-    .log-entry.error {
-      border-left-color: #f44336;
-      background-color: #4a2c2c;
-    }
-    .log-entry.user {
-      border-left-color: #2196F3;
-      background-color: #2c3a4a;
-    }
-    .log-entry.assistant {
-      border-left-color: #4CAF50;
-      background-color: #2c4a2c;
-    }
-    .timestamp {
-      font-size: 12px;
-      color: #888;
-      margin-right: 10px;
-    }
+    button.secondary { background-color: #3b7bd6; }
+    button.warn { background-color: #d67a3b; }
+    button.danger { background-color: #f44336; }
+    button:disabled { background-color: #666; cursor: not-allowed; }
+    .status { margin: 10px 0; padding: 10px; border-radius: 4px; font-weight: bold; }
+    .status.connected { background-color: #4CAF50; }
+    .status.connecting { background-color: #ff9800; }
+    .status.disconnected { background-color: #f44336; }
+    .log-entry { margin: 5px 0; padding: 8px; border-left: 3px solid #4CAF50; background-color: #333; border-radius: 4px; }
+    .log-entry.error { border-left-color: #f44336; background-color: #4a2c2c; }
+    .log-entry.user { border-left-color: #2196F3; background-color: #2c3a4a; }
+    .log-entry.assistant { border-left-color: #4CAF50; background-color: #2c4a2c; }
+    .timestamp { font-size: 12px; color: #888; margin-right: 10px; }
+    .section { margin: 12px 0 18px; padding: 12px; background:#232323; border-radius:8px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .row input, .row select { padding:8px; border-radius:6px; border:1px solid #444; background:#1b1b1b; color:#fff; }
+    .row label { font-size: 13px; color:#bbb; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
 <body>
   <h1>🏁 iRacing AI Agent</h1>
-  
+
   <div class="container">
     <div class="controls">
-      <button id="connect">Connect (open-mic)</button>
-      <button id="disconnect" disabled>Disconnect</button>
-      
-      <div id="status" class="status disconnected">Disconnected</div>
-      
-      <h3>Agent Status</h3>
-      <div id="agent-status">
-        <p><strong>Model:</strong> <span id="model-info">Not connected</span></p>
-        <p><strong>Voice:</strong> <span id="voice-info">verse</span></p>
-        <p><strong>Turn Detection:</strong> <span id="turn-detection">Server VAD</span></p>
-        <p><strong>Connection State:</strong> <span id="connection-state">idle</span></p>
+      <div class="section">
+        <div class="row">
+          <button id="connect">Connect (open-mic)</button>
+          <button id="disconnect" disabled>Disconnect</button>
+        </div>
+
+        <div id="status" class="status disconnected">Disconnected</div>
+
+        <div id="agent-status">
+          <p><strong>Model:</strong> <span id="model-info">Not connected</span></p>
+          <p><strong>Voice:</strong> <span id="voice-info">ballad</span></p>
+          <p><strong>Turn Detection:</strong> <span id="turn-detection">Server VAD</span></p>
+          <p><strong>Connection State:</strong> <span id="connection-state">idle</span></p>
+        </div>
+
+        <div class="section">
+          <h3>Server</h3>
+          <div class="row">
+            <label>API Base URL</label>
+            <input id="apiBase" class="mono" style="min-width:260px" placeholder="http://localhost:8000" />
+            <label><input type="checkbox" id="sessionOnline" /> /session?online=1</label>
+            <button id="pingServer" class="secondary">Ping /history</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>History</h3>
+          <div class="row">
+            <button id="historyGet" class="secondary">Get</button>
+            <button id="historyReset" class="danger">Reset</button>
+            <input id="rotateBytes" class="mono" type="number" value="5242880" min="1024" />
+            <button id="historyRotate" class="warn">Rotate</button>
+          </div>
+          <div class="row">
+            <select id="historyRole">
+              <option value="user">user</option>
+              <option value="assistant">assistant</option>
+              <option value="system">system</option>
+            </select>
+            <input id="historySessionId" class="mono" placeholder="session_id (optional)" />
+          </div>
+          <div class="row">
+            <input id="historyContent" style="flex:1" placeholder="Append message content…" />
+            <button id="historyAppend">Append</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Export → Realtime</h3>
+          <div class="row">
+            <label>last_turns</label>
+            <input id="exportLast" class="mono" type="number" value="6" min="0" style="width:80px" />
+          </div>
+          <div class="row">
+            <button id="exportPreview" class="secondary">Preview export</button>
+            <button id="exportSend">Send export to model</button>
+            <button id="exportSendRespond">Send export + respond</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Live text → model</h3>
+          <div class="row">
+            <input id="liveText" style="flex:1" placeholder='Say: "Pick up where we left off…"' />
+          </div>
+          <div class="row">
+            <button id="sendText">Send</button>
+            <button id="sendTextRespond" class="secondary">Send + respond</button>
+          </div>
+        </div>
+
+        <audio id="assistant" autoplay></audio>
       </div>
-      
-      <audio id="assistant" autoplay></audio>
     </div>
-    
+
     <div class="output">
       <h3>Conversation Log</h3>
       <div id="log"></div>
@@ -120,59 +136,114 @@
     const logEl = document.getElementById('log');
     const modelInfo = document.getElementById('model-info');
     const connectionState = document.getElementById('connection-state');
-    
+    const apiBaseInput = document.getElementById('apiBase');
+    const onlineChk = document.getElementById('sessionOnline');
+
+    // History controls
+    const btnHistoryGet = document.getElementById('historyGet');
+    const btnHistoryReset = document.getElementById('historyReset');
+    const btnHistoryRotate = document.getElementById('historyRotate');
+    const rotateBytes = document.getElementById('rotateBytes');
+    const historyRole = document.getElementById('historyRole');
+    const historySessionId = document.getElementById('historySessionId');
+    const historyContent = document.getElementById('historyContent');
+    const btnHistoryAppend = document.getElementById('historyAppend');
+
+    // Export controls
+    const exportLast = document.getElementById('exportLast');
+    const btnExportPreview = document.getElementById('exportPreview');
+    const btnExportSend = document.getElementById('exportSend');
+    const btnExportSendRespond = document.getElementById('exportSendRespond');
+
+    // Live text
+    const liveText = document.getElementById('liveText');
+    const btnSendText = document.getElementById('sendText');
+    const btnSendTextRespond = document.getElementById('sendTextRespond');
+
+    // Ping
+    const btnPing = document.getElementById('pingServer');
+
     let pc = null;
     let dataChannel = null;
-    
-    // Logging functions
+    let lastExport = null;
+    let partialText = '';
+
+    // Helpers
     function addLog(message, type = 'info') {
       const timestamp = new Date().toLocaleTimeString();
       const logEntry = document.createElement('div');
       logEntry.className = 'log-entry ' + type;
       logEntry.innerHTML = '<span class="timestamp">' + timestamp + '</span>' + message;
-      logEl.appendChild(logEntry);
-      logEl.scrollTop = logEl.scrollHeight;
+      logEl.prepend(logEntry);
+      logEl.scrollTop = 0;
     }
-    
+
     function updateStatus(status, text) {
       statusEl.className = 'status ' + status;
       statusEl.textContent = text;
       connectionState.textContent = status;
     }
-    
+
     function updateConnectionState(state) {
       connectionState.textContent = state;
       addLog('Connection state: ' + state, 'info');
     }
-    
+
+    function apiBase() {
+      const v = (apiBaseInput.value || '').trim();
+      return v || 'http://localhost:8000';
+    }
+
+    async function api(path, opts) {
+      const url = apiBase() + path;
+      const res = await fetch(url, opts);
+      const txt = await res.text();
+      let body = txt;
+      try { body = JSON.parse(txt); } catch {}
+      if (!res.ok) {
+        addLog(`❌ ${path} -> HTTP ${res.status}`, 'error');
+        throw new Error(typeof body === 'string' ? body : JSON.stringify(body));
+      }
+      return body;
+    }
+
+    function sendEvent(obj) {
+      if (!dataChannel || dataChannel.readyState !== 'open') {
+        addLog('Data channel not open', 'error');
+        throw new Error('data channel not open');
+      }
+      dataChannel.send(JSON.stringify(obj));
+    }
+
+    // Connect flow
     connectBtn.onclick = async function() {
       try {
         addLog('🔄 Starting connection to AI agent...', 'info');
         updateStatus('connecting', 'Connecting...');
         connectBtn.disabled = true;
-        
-        // Get ephemeral session from our relay
-        addLog('📡 Fetching session from server...', 'info');
-        const response = await fetch("http://localhost:8000/session");
+
+        // Fetch ephemeral session from your server
+        addLog('📡 Fetching /session…', 'info');
+        const q = onlineChk.checked ? '?online=1' : '';
+        const response = await fetch(apiBase() + "/session" + q);
         const session = await response.json();
         addLog('✅ Session created with model: ' + (session.model || 'gpt-realtime'), 'info');
         modelInfo.textContent = session.model || 'gpt-realtime';
 
         pc = new RTCPeerConnection();
-        
-        // Handle incoming audio
-        pc.ontrack = function(e) { 
-          audioEl.srcObject = e.streams[0]; 
+
+        // Audio from model
+        pc.ontrack = function(e) {
+          audioEl.srcObject = e.streams[0];
           addLog('🔊 Audio stream connected', 'assistant');
         };
-        
-        // Connection state monitoring
+
         pc.onconnectionstatechange = function() {
           updateConnectionState(pc.connectionState);
           if (pc.connectionState === 'connected') {
             updateStatus('connected', 'Connected');
             disconnectBtn.disabled = false;
-            addLog('🎉 Successfully connected to AI agent!', 'info');
+            addLog('🎉 Connected!', 'info');
           } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
             updateStatus('disconnected', 'Disconnected');
             connectBtn.disabled = false;
@@ -181,13 +252,13 @@
           }
         };
 
-        // Mic track → RTCPeerConnection
-        addLog('🎤 Requesting microphone access...', 'info');
+        // Mic
+        addLog('🎤 Requesting microphone…', 'info');
         const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mic.getTracks().forEach(function(t) { pc.addTrack(t, mic); });
+        mic.getTracks().forEach(t => pc.addTrack(t, mic));
         addLog('✅ Microphone connected', 'info');
 
-        // DataChannel for events and messages
+        // Data channel for events
         dataChannel = pc.createDataChannel("events");
         dataChannel.onopen = function() {
           addLog('📨 Data channel opened', 'info');
@@ -195,9 +266,26 @@
         dataChannel.onmessage = function(event) {
           try {
             const data = JSON.parse(event.data);
-            addLog('📩 Agent event: ' + (data.type || 'unknown'), 'assistant');
-            if (data.content) {
-              addLog('💬 Agent: ' + data.content, 'assistant');
+
+            // Handle common realtime events
+            if (data.type === 'response.output_text.delta') {
+              partialText += data.delta;
+            } else if (data.type === 'response.output_text.done') {
+              if (partialText.trim()) addLog('💬 Assistant: ' + partialText, 'assistant');
+              partialText = '';
+            } else if (data.type === 'response.completed') {
+              // completed signal
+            } else if (data.type === 'conversation.item.created') {
+              // item ack
+            } else if (data.type === 'error') {
+              addLog('❌ Model error: ' + (data.error?.message || 'unknown'), 'error');
+            } else {
+              // generic
+              if (data.role === 'assistant' && data.content) {
+                addLog('💬 Assistant: ' + JSON.stringify(data.content), 'assistant');
+              } else {
+                addLog('📩 Event: ' + (data.type || 'unknown'), 'info');
+              }
             }
           } catch (e) {
             addLog('📩 Agent message: ' + event.data, 'assistant');
@@ -206,9 +294,8 @@
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        addLog('📤 Sending SDP offer to OpenAI...', 'info');
+        addLog('📤 Sending SDP offer to OpenAI…', 'info');
 
-        // Send SDP offer directly to Realtime (WebRTC path)
         const sdpResp = await fetch(
           'https://api.openai.com/v1/realtime?model=' + encodeURIComponent(session.model || 'gpt-realtime'),
           {
@@ -221,16 +308,15 @@
             body: offer.sdp
           }
         );
-        
+
         if (!sdpResp.ok) {
           throw new Error('HTTP ' + sdpResp.status + ': ' + await sdpResp.text());
         }
-        
+
         const answer = { type: "answer", sdp: await sdpResp.text() };
         await pc.setRemoteDescription(answer);
-        addLog('✅ SDP answer received and set', 'info');
-        addLog('🎯 Ready for conversation! Start speaking...', 'info');
-        
+        addLog('✅ SDP answer set — start talking', 'info');
+
       } catch (error) {
         addLog('❌ Connection error: ' + error.message, 'error');
         updateStatus('disconnected', 'Connection Failed');
@@ -238,25 +324,116 @@
         console.error('Connection error:', error);
       }
     };
-    
+
     disconnectBtn.onclick = function() {
-      if (pc) {
-        pc.close();
-        pc = null;
-      }
-      if (dataChannel) {
-        dataChannel.close();
-        dataChannel = null;
-      }
+      if (pc) { pc.close(); pc = null; }
+      if (dataChannel) { dataChannel.close(); dataChannel = null; }
       updateStatus('disconnected', 'Disconnected');
       connectBtn.disabled = false;
       disconnectBtn.disabled = true;
-      addLog('🔌 Disconnected from AI agent', 'info');
+      addLog('🔌 Disconnected', 'info');
     };
-    
-    // Initialize
-    addLog('🚀 iRacing AI Agent interface loaded', 'info');
-    addLog('ℹ️ Click "Connect" to start talking with the AI agent', 'info');
+
+    // -------- History buttons --------
+    btnPing.onclick = async () => {
+      try {
+        const h = await api('/history');
+        addLog('✅ Ping OK: /history returned ' + (Array.isArray(h.messages) ? h.messages.length : 0) + ' msgs', 'info');
+      } catch (e) {}
+    };
+
+    btnHistoryGet.onclick = async () => {
+      const data = await api('/history');
+      addLog('History:\n' + JSON.stringify(data, null, 2), 'info');
+    };
+
+    btnHistoryReset.onclick = async () => {
+      const data = await api('/history', { method: 'DELETE' });
+      addLog('Reset history: ' + JSON.stringify(data), 'info');
+    };
+
+    btnHistoryRotate.onclick = async () => {
+      const max = Number(rotateBytes.value || 5242880);
+      const data = await api('/history/rotate?max_bytes=' + encodeURIComponent(max), { method: 'POST' });
+      addLog('Rotate: ' + JSON.stringify(data), 'info');
+    };
+
+    btnHistoryAppend.onclick = async () => {
+      const role = historyRole.value;
+      const content = (historyContent.value || '').trim();
+      const session_id = (historySessionId.value || '').trim() || null;
+      if (!content) { addLog('Content is empty', 'error'); return; }
+      const body = { role, content, session_id };
+      const data = await api('/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      addLog('Appended to history: ' + JSON.stringify(data), 'user');
+      historyContent.value = '';
+    };
+
+    // -------- Export → Realtime --------
+    btnExportPreview.onclick = async () => {
+      const n = Number(exportLast.value || 6);
+      const data = await api('/history/as-realtime-items?last_turns=' + encodeURIComponent(n));
+      lastExport = data;
+      addLog('Export preview (' + data.count + ' events):\n' + JSON.stringify(data, null, 2), 'info');
+    };
+
+    function sendExportEvents() {
+      if (!lastExport || !Array.isArray(lastExport.events)) {
+        addLog('Run Preview export first', 'error'); return;
+      }
+      lastExport.events.forEach(evt => sendEvent(evt));
+      addLog('Sent ' + lastExport.events.length + ' conversation.item.create events', 'info');
+    }
+
+    btnExportSend.onclick = () => {
+      sendExportEvents();
+    };
+
+    btnExportSendRespond.onclick = () => {
+      sendExportEvents();
+      // trigger model reply using the injected history
+      sendEvent({ type: 'response.create' });
+      addLog('Triggered response.create', 'info');
+    };
+
+    // -------- Live text --------
+    function sendUserText(doRespond) {
+      const text = (liveText.value || '').trim();
+      if (!text) { addLog('Empty live text', 'error'); return; }
+      // Create a user item
+      sendEvent({
+        type: 'conversation.item.create',
+        item: {
+          id: 'u_' + Math.random().toString(36).slice(2, 8),
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text }]
+        }
+      });
+      addLog('You: ' + text, 'user');
+      liveText.value = '';
+      if (doRespond) {
+        sendEvent({ type: 'response.create' });
+        addLog('Triggered response.create', 'info');
+      }
+    }
+
+    btnSendText.onclick = () => sendUserText(false);
+    btnSendTextRespond.onclick = () => sendUserText(true);
+
+    // Init sensible defaults
+    (function initDefaults(){
+      apiBaseInput.value = localStorage.getItem('apiBase') || 'http://localhost:8000';
+      onlineChk.checked = localStorage.getItem('sessionOnline') === '1';
+      apiBaseInput.addEventListener('change', () => localStorage.setItem('apiBase', apiBaseInput.value));
+      onlineChk.addEventListener('change', () => localStorage.setItem('sessionOnline', onlineChk.checked ? '1':'0'));
+      addLog('🚀 UI loaded — connect, then use History/Export buttons', 'info');
+      addLog('ℹ️ Export: send items first, then `response.create` to have the model continue with that context', 'info');
+    })();
   </script>
 </body>
 </html>

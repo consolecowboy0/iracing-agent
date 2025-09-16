@@ -4,6 +4,8 @@ import os, httpx, dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+dotenv.load_dotenv()
+
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 PROMPT_ID = os.environ["PROMPT_ID"]          # e.g. prmpt_12345
 MODEL = os.getenv("REALTIME_MODEL", "gpt-realtime")
@@ -18,7 +20,7 @@ async def create_session():
         "model": MODEL,
         "instructions": f"prompt:{PROMPT_ID}",
         "modalities": ["audio","text"],
-        "voice": "verse",
+        "voice": "ballad",
         "turn_detection": {
             "type": "server_vad",
             # tune these as needed:

@@ -1,42 +1,262 @@
-<!-- index.html: open this from a simple static server (or file: in Chrome) -->
-<!doctype html><meta charset="utf-8" />
+<!doctype html>
+<html>
+<head>
+  <title>iRacing AI Agent</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #1a1a1a;
+      color: #ffffff;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .controls {
+      flex: 1;
+      min-width: 300px;
+    }
+    .output {
+      flex: 2;
+      background-color: #2a2a2a;
+      border-radius: 8px;
+      padding: 20px;
+      height: 600px;
+      overflow-y: auto;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status.connected {
+      background-color: #4CAF50;
+    }
+    .status.connecting {
+      background-color: #ff9800;
+    }
+    .status.disconnected {
+      background-color: #f44336;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 8px;
+      border-left: 3px solid #4CAF50;
+      background-color: #333;
+      border-radius: 4px;
+    }
+    .log-entry.error {
+      border-left-color: #f44336;
+      background-color: #4a2c2c;
+    }
+    .log-entry.user {
+      border-left-color: #2196F3;
+      background-color: #2c3a4a;
+    }
+    .log-entry.assistant {
+      border-left-color: #4CAF50;
+      background-color: #2c4a2c;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #888;
+      margin-right: 10px;
+    }
+  </style>
+</head>
 <body>
-  <button id="connect">Connect (open-mic)</button>
-  <audio id="assistant" autoplay></audio>
+  <h1>🏁 iRacing AI Agent</h1>
+  
+  <div class="container">
+    <div class="controls">
+      <button id="connect">Connect (open-mic)</button>
+      <button id="disconnect" disabled>Disconnect</button>
+      
+      <div id="status" class="status disconnected">Disconnected</div>
+      
+      <h3>Agent Status</h3>
+      <div id="agent-status">
+        <p><strong>Model:</strong> <span id="model-info">Not connected</span></p>
+        <p><strong>Voice:</strong> <span id="voice-info">verse</span></p>
+        <p><strong>Turn Detection:</strong> <span id="turn-detection">Server VAD</span></p>
+        <p><strong>Connection State:</strong> <span id="connection-state">idle</span></p>
+      </div>
+      
+      <audio id="assistant" autoplay></audio>
+    </div>
+    
+    <div class="output">
+      <h3>Conversation Log</h3>
+      <div id="log"></div>
+    </div>
+  </div>
+
   <script>
     const audioEl = document.getElementById('assistant');
-    document.getElementById('connect').onclick = async () => {
-      // Get ephemeral session from our relay
-      const session = await fetch("http://localhost:5050/session").then(r=>r.json());
+    const connectBtn = document.getElementById('connect');
+    const disconnectBtn = document.getElementById('disconnect');
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+    const modelInfo = document.getElementById('model-info');
+    const connectionState = document.getElementById('connection-state');
+    
+    let pc = null;
+    let dataChannel = null;
+    
+    // Logging functions
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-entry ' + type;
+      logEntry.innerHTML = '<span class="timestamp">' + timestamp + '</span>' + message;
+      logEl.appendChild(logEntry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    function updateStatus(status, text) {
+      statusEl.className = 'status ' + status;
+      statusEl.textContent = text;
+      connectionState.textContent = status;
+    }
+    
+    function updateConnectionState(state) {
+      connectionState.textContent = state;
+      addLog('Connection state: ' + state, 'info');
+    }
+    
+    connectBtn.onclick = async function() {
+      try {
+        addLog('🔄 Starting connection to AI agent...', 'info');
+        updateStatus('connecting', 'Connecting...');
+        connectBtn.disabled = true;
+        
+        // Get ephemeral session from our relay
+        addLog('📡 Fetching session from server...', 'info');
+        const response = await fetch("http://localhost:8000/session");
+        const session = await response.json();
+        addLog('✅ Session created with model: ' + (session.model || 'gpt-realtime'), 'info');
+        modelInfo.textContent = session.model || 'gpt-realtime';
 
-      const pc = new RTCPeerConnection();
-      pc.ontrack = (e) => { audioEl.srcObject = e.streams[0]; };
+        pc = new RTCPeerConnection();
+        
+        // Handle incoming audio
+        pc.ontrack = function(e) { 
+          audioEl.srcObject = e.streams[0]; 
+          addLog('🔊 Audio stream connected', 'assistant');
+        };
+        
+        // Connection state monitoring
+        pc.onconnectionstatechange = function() {
+          updateConnectionState(pc.connectionState);
+          if (pc.connectionState === 'connected') {
+            updateStatus('connected', 'Connected');
+            disconnectBtn.disabled = false;
+            addLog('🎉 Successfully connected to AI agent!', 'info');
+          } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+            updateStatus('disconnected', 'Disconnected');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            addLog('❌ Connection failed or disconnected', 'error');
+          }
+        };
 
-      // Mic track → RTCPeerConnection
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mic.getTracks().forEach(t => pc.addTrack(t, mic));
+        // Mic track → RTCPeerConnection
+        addLog('🎤 Requesting microphone access...', 'info');
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mic.getTracks().forEach(function(t) { pc.addTrack(t, mic); });
+        addLog('✅ Microphone connected', 'info');
 
-      // DataChannel is optional; useful for logs or UI messages
-      pc.createDataChannel("events");
+        // DataChannel for events and messages
+        dataChannel = pc.createDataChannel("events");
+        dataChannel.onopen = function() {
+          addLog('📨 Data channel opened', 'info');
+        };
+        dataChannel.onmessage = function(event) {
+          try {
+            const data = JSON.parse(event.data);
+            addLog('📩 Agent event: ' + (data.type || 'unknown'), 'assistant');
+            if (data.content) {
+              addLog('💬 Agent: ' + data.content, 'assistant');
+            }
+          } catch (e) {
+            addLog('📩 Agent message: ' + event.data, 'assistant');
+          }
+        };
 
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        addLog('📤 Sending SDP offer to OpenAI...', 'info');
 
-      // Send SDP offer directly to Realtime (WebRTC path)
-      const sdpResp = await fetch(
-        `https://api.openai.com/v1/realtime?model=${encodeURIComponent(session.model || 'gpt-realtime')}`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session.client_secret.value}`, // ephemeral
-            "Content-Type": "application/sdp",
-            "OpenAI-Beta": "realtime=v1"
-          },
-          body: offer.sdp
+        // Send SDP offer directly to Realtime (WebRTC path)
+        const sdpResp = await fetch(
+          'https://api.openai.com/v1/realtime?model=' + encodeURIComponent(session.model || 'gpt-realtime'),
+          {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + session.client_secret.value,
+              "Content-Type": "application/sdp",
+              "OpenAI-Beta": "realtime=v1"
+            },
+            body: offer.sdp
+          }
+        );
+        
+        if (!sdpResp.ok) {
+          throw new Error('HTTP ' + sdpResp.status + ': ' + await sdpResp.text());
         }
-      );
-      const answer = { type: "answer", sdp: await sdpResp.text() };
-      await pc.setRemoteDescription(answer);
+        
+        const answer = { type: "answer", sdp: await sdpResp.text() };
+        await pc.setRemoteDescription(answer);
+        addLog('✅ SDP answer received and set', 'info');
+        addLog('🎯 Ready for conversation! Start speaking...', 'info');
+        
+      } catch (error) {
+        addLog('❌ Connection error: ' + error.message, 'error');
+        updateStatus('disconnected', 'Connection Failed');
+        connectBtn.disabled = false;
+        console.error('Connection error:', error);
+      }
     };
+    
+    disconnectBtn.onclick = function() {
+      if (pc) {
+        pc.close();
+        pc = null;
+      }
+      if (dataChannel) {
+        dataChannel.close();
+        dataChannel = null;
+      }
+      updateStatus('disconnected', 'Disconnected');
+      connectBtn.disabled = false;
+      disconnectBtn.disabled = true;
+      addLog('🔌 Disconnected from AI agent', 'info');
+    };
+    
+    // Initialize
+    addLog('🚀 iRacing AI Agent interface loaded', 'info');
+    addLog('ℹ️ Click "Connect" to start talking with the AI agent', 'info');
   </script>
 </body>
+</html>

@@ -1,0 +1,42 @@
+<!-- index.html: open this from a simple static server (or file: in Chrome) -->
+<!doctype html><meta charset="utf-8" />
+<body>
+  <button id="connect">Connect (open-mic)</button>
+  <audio id="assistant" autoplay></audio>
+  <script>
+    const audioEl = document.getElementById('assistant');
+    document.getElementById('connect').onclick = async () => {
+      // Get ephemeral session from our relay
+      const session = await fetch("http://localhost:5050/session").then(r=>r.json());
+
+      const pc = new RTCPeerConnection();
+      pc.ontrack = (e) => { audioEl.srcObject = e.streams[0]; };
+
+      // Mic track → RTCPeerConnection
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mic.getTracks().forEach(t => pc.addTrack(t, mic));
+
+      // DataChannel is optional; useful for logs or UI messages
+      pc.createDataChannel("events");
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Send SDP offer directly to Realtime (WebRTC path)
+      const sdpResp = await fetch(
+        `https://api.openai.com/v1/realtime?model=${encodeURIComponent(session.model || 'gpt-realtime')}`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session.client_secret.value}`, // ephemeral
+            "Content-Type": "application/sdp",
+            "OpenAI-Beta": "realtime=v1"
+          },
+          body: offer.sdp
+        }
+      );
+      const answer = { type: "answer", sdp: await sdpResp.text() };
+      await pc.setRemoteDescription(answer);
+    };
+  </script>
+</body>

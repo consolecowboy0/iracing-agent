@@ -10,6 +10,17 @@
         "text"
       ],
       "online": true
+    },
+    {
+      "ts": 1758024643590,
+      "id": "local_9d54f23a",
+      "model": "gpt-realtime",
+      "voice": "ballad",
+      "modalities": [
+        "audio",
+        "text"
+      ],
+      "online": false
     }
   ],
   "messages": []

@@ -194,3 +194,7 @@ async def history_as_realtime_items(last_turns: int = 6):
 
     events = [to_event(m) for m in systems] + [to_event(m) for m in keep]
     return {"events": events, "count": len(events)}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
